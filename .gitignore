@@ -1,0 +1,16 @@
+/charts/*.tgz
+*.lock
+*.tmp
+/tmp/
+.helmignore
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+secrets.auto.tfvars
+values-*.yaml
+*.secret.yaml
+*.secret.yml
+.vscode/
+*.DS_Store
