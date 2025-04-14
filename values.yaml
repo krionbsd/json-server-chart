@@ -2,7 +2,7 @@
 replicaCount: 1
 
 image:
-  repository: typicode/json-server
+  repository: local/json-server
   tag: "0.17.4"
   pullPolicy: IfNotPresent
 
@@ -19,6 +19,14 @@ resources:
     memory: 64Mi
 
 minio:
+  mode: "standalone"
+  replicas: 1
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
   enabled: true
   bucket: "json-data"
   file: "db.json"
