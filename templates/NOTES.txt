@@ -1,0 +1,16 @@
+{{- if .Values.minio.enabled }}
+json-server has been deployed with MinIO.
+
+Access the API:
+  http://{{ include "json-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+MinIO creds are managed with k8s secrets.
+{{- else }}
+json-server has been deployed without MinIO.
+
+Access the API:
+  http://{{ include "json-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+{{- end }}
+
+To get credentials:
+  kubectl get secret minio-credentials -o jsonpath='{.data}'
