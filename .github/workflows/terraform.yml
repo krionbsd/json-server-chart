@@ -45,6 +45,11 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Update Helm Dependencies for Lint
+        run: |
+          helm repo add minio https://charts.min.io/
+          helm dependency update .
+
       - name: Helm Lint
         run: |
           helm lint .
@@ -76,6 +81,11 @@ jobs:
         run: |
           docker build -t local/json-server:0.17.4 .
           kind load docker-image local/json-server:0.17.4 --name test-cluster
+
+      - name: Update Helm Dependencies
+        run: |
+          helm repo add minio https://charts.min.io/
+          helm dependency update .
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
