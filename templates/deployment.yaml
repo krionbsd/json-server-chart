@@ -17,7 +17,10 @@ spec:
       initContainers:
         - name: download-db
           image: {{ .Values.initContainer.image }}
-          command: {{ .Values.initContainer.command }}
+          command:
+            - "sh"
+            - "-c"
+            - "mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} && mc cp minio/${MINIO_BUCKET}/${MINIO_FILE} /data/db.json"
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
