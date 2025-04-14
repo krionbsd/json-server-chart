@@ -1,0 +1,131 @@
+name: json-server-terraform
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Format Check
+        run: |
+          cd terraform/modules/json-server
+          terraform fmt -check
+          cd ../../environments/dev
+          terraform fmt -check
+          cd ../prod
+          terraform fmt -check
+
+      - name: Validate Dev
+        run: |
+          cd terraform/environments/dev
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate Prod
+        run: |
+          cd terraform/environments/prod
+          terraform init -backend=false
+          terraform validate
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Helm Lint
+        run: |
+          helm lint .
+
+  test-deploy:
+    name: Test Deployment
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Create Kind Cluster
+        uses: helm/kind-action@v1.5.0
+        with:
+          cluster_name: test-cluster
+
+      - name: Build and Load Docker Image
+        run: |
+          docker build -t local/json-server:0.17.4 .
+          kind load docker-image local/json-server:0.17.4 --name test-cluster
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Create Dev Secrets
+        run: |
+          cd terraform/environments/dev
+          cat > terraform.tfvars <<EOF
+          minio_root_user     = "${{ secrets.DEV_MINIO_ROOT_USER }}"
+          minio_root_password = "${{ secrets.DEV_MINIO_ROOT_PASSWORD }}"
+          minio_access_key    = "${{ secrets.DEV_MINIO_ACCESS_KEY }}"
+          minio_secret_key    = "${{ secrets.DEV_MINIO_SECRET_KEY }}"
+          EOF
+
+      - name: Test Dev Environment
+        run: |
+          cd terraform/environments/dev
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Verify Dev Deployment
+        run: |
+          kubectl get pods -n dev
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=json-server -n dev --timeout=60s
+          kubectl port-forward svc/json-server-json-server 3000:80 -n dev &
+          sleep 5
+          curl http://localhost:3000/whoami
+
+      - name: Create Prod Secrets
+        run: |
+          cd terraform/environments/prod
+          cat > terraform.tfvars <<EOF
+          minio_root_user     = "${{ secrets.PROD_MINIO_ROOT_USER }}"
+          minio_root_password = "${{ secrets.PROD_MINIO_ROOT_PASSWORD }}"
+          minio_access_key    = "${{ secrets.PROD_MINIO_ACCESS_KEY }}"
+          minio_secret_key    = "${{ secrets.PROD_MINIO_SECRET_KEY }}"
+          EOF
+
+      - name: Test Prod Environment
+        run: |
+          cd terraform/environments/prod
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Verify Prod Deployment
+        run: |
+          kubectl get pods -n prod
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=json-server -n prod --timeout=60s
+          kubectl port-forward svc/json-server-json-server 3001:80 -n prod &
+          sleep 5
+          curl http://localhost:3001/whoami
