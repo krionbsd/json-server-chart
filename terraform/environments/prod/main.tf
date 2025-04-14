@@ -32,13 +32,13 @@ module "json_server" {
   image_repository = "local/json-server"
   image_tag        = "0.17.4"
 
-  minio_mode               = "standalone"
-  minio_replicas           = 4
+  minio_mode                = "standalone"
+  minio_replicas            = 4
   minio_persistence_enabled = true
-  minio_memory             = "1Gi"
-  minio_cpu                = "500m"
-  minio_bucket             = "json-data"
-  minio_file               = "db.json"
+  minio_memory              = "1Gi"
+  minio_cpu                 = "500m"
+  minio_bucket              = "json-data"
+  minio_file                = "db.json"
 
   minio_root_user     = var.minio_root_user
   minio_root_password = var.minio_root_password
