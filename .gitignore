@@ -2,7 +2,6 @@
 *.lock
 *.tmp
 /tmp/
-.helmignore
 .terraform/
 *.tfstate
 *.tfstate.backup
