@@ -1,16 +1,25 @@
-{{- if .Values.minio.enabled }}
+1. Deployment
 json-server has been deployed with MinIO.
 
-Access the API:
-  http://{{ include "json-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
-
-MinIO creds are managed with k8s secrets.
+2. Access
+{{- if .Values.ingress.enabled }}
+Access the API via Ingress:
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
 {{- else }}
-json-server has been deployed without MinIO.
-
-Access the API:
+Access the API via Kubernetes Service:
   http://{{ include "json-server.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+
+  # Forward the service port to access from your local machine:
+  kubectl port-forward svc/{{ include "json-server.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  # Then access: http://localhost:{{ .Values.service.port }}
 {{- end }}
 
+3. Credentials
+MinIO credentials are managed with k8s secrets.
+
 To get credentials:
-  kubectl get secret minio-credentials -o jsonpath='{.data}'
+  kubectl get secret minio-credentials -o jsonpath='{.data}' -n {{ .Release.Namespace }} | base64 --decode

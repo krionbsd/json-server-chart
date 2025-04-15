@@ -44,4 +44,29 @@ module "json_server" {
   minio_root_password = var.minio_root_password
   minio_access_key    = var.minio_access_key
   minio_secret_key    = var.minio_secret_key
+
+  ingress_enabled    = false
+  ingress_class_name = "nginx"
+  ingress_annotations = {
+    "kubernetes.io/ingress.class" = "nginx"
+  }
+  ingress_hosts = [
+    {
+      host = "json-server-dev.example.com"
+      paths = [
+        {
+          path     = "/"
+          pathType = "Prefix"
+        }
+      ]
+    }
+  ]
+  ingress_tls = []
+  # Uncomment to enable TLS
+  # ingress_tls = [
+  #   {
+  #     secretName = "json-server-dev-tls"
+  #     hosts      = ["json-server-dev.example.com"]
+  #   }
+  # ]
 }

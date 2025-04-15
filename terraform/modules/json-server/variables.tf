@@ -86,3 +86,42 @@ variable "minio_secret_key" {
   type        = string
   sensitive   = true
 }
+
+variable "ingress_enabled" {
+  description = "Enable Ingress"
+  type        = bool
+  default     = false
+}
+
+variable "ingress_class_name" {
+  description = "Ingress class name"
+  type        = string
+  default     = ""
+}
+
+variable "ingress_annotations" {
+  description = "Ingress annotations"
+  type        = map(string)
+  default     = {}
+}
+
+variable "ingress_hosts" {
+  description = "Ingress hosts configuration"
+  type = list(object({
+    host = string
+    paths = list(object({
+      path     = string
+      pathType = string
+    }))
+  }))
+  default = []
+}
+
+variable "ingress_tls" {
+  description = "Ingress TLS configuration"
+  type = list(object({
+    secretName = string
+    hosts      = list(string)
+  }))
+  default = []
+}

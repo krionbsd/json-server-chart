@@ -78,4 +78,88 @@ resource "helm_release" "json_server" {
     name  = "minio.rootPassword"
     value = var.minio_root_password
   }
+
+  set {
+    name  = "ingress.enabled"
+    value = var.ingress_enabled
+  }
+
+  set {
+    name  = "ingress.className"
+    value = var.ingress_class_name
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_annotations
+    content {
+      name  = "ingress.annotations.${set.key}"
+      value = set.value
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_enabled ? range(length(var.ingress_hosts)) : []
+    content {
+      name  = "ingress.hosts[${set.value}].host"
+      value = var.ingress_hosts[set.value].host
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_enabled ? flatten([
+      for host_idx, host in var.ingress_hosts : [
+        for path_idx, path in host.paths : {
+          host_idx = host_idx
+          path_idx = path_idx
+          path     = path.path
+          pathType = path.pathType
+        }
+      ]
+    ]) : []
+    content {
+      name  = "ingress.hosts[${set.value.host_idx}].paths[${set.value.path_idx}].path"
+      value = set.value.path
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_enabled ? flatten([
+      for host_idx, host in var.ingress_hosts : [
+        for path_idx, path in host.paths : {
+          host_idx = host_idx
+          path_idx = path_idx
+          path     = path.path
+          pathType = path.pathType
+        }
+      ]
+    ]) : []
+    content {
+      name  = "ingress.hosts[${set.value.host_idx}].paths[${set.value.path_idx}].pathType"
+      value = set.value.pathType
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_enabled ? range(length(var.ingress_tls)) : []
+    content {
+      name  = "ingress.tls[${set.value}].secretName"
+      value = var.ingress_tls[set.value].secretName
+    }
+  }
+
+  dynamic "set" {
+    for_each = var.ingress_enabled ? flatten([
+      for tls_idx, tls in var.ingress_tls : [
+        for host_idx, host in tls.hosts : {
+          tls_idx  = tls_idx
+          host_idx = host_idx
+          host     = host
+        }
+      ]
+    ]) : []
+    content {
+      name  = "ingress.tls[${set.value.tls_idx}].hosts[${set.value.host_idx}]"
+      value = set.value.host
+    }
+  }
 }
